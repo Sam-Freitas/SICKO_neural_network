@@ -1,0 +1,10 @@
+output/
+output2/
+datastore_for_sorted_data/
+SICKO_testing_dataset_png/
+Terasaki Validation SU10/
+Terasaki Validation SU10_outputs/
+_SICKO_NN/
+trained_weights/
+
+__pycache__/
