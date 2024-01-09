@@ -125,8 +125,9 @@ all_test_imgs, batch_size = sort_test_imgs_by_name_date(all_test_imgs, combine_i
 # specify and load in the model and parts
 img_size = 128
 model = get_this_model()
+crop_into_circle = True
 
-model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_NN\trained_weights\model_20231215_161844_training_128_large_L-8417.pt")) #### uncomment this to use a previously trained weights 
+model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_neural_network\trained_weights\model_20231215_161844_training_128_large_L-8417.pt")) #### uncomment this to use a previously trained weights 
 model.eval()
 
 # # Calculate available GPU memory
@@ -160,16 +161,17 @@ with torch.no_grad():
 
         # this detects the circles in the images (wells)
         # then uses that mask to create a more "zoomed in" version of the input image, then preprocesses it for the input
-        for j, (each_input,each_input_raw) in enumerate(zip(tinputs,raw_img)):
-            circle_mask = detect_hough_circles(each_input).to(device)
-            if torch.sum(circle_mask) > 3000:
-                large_circle = transforms.Resize((each_input_raw.squeeze().shape[0],each_input_raw.squeeze().shape[1]), antialias=True)(circle_mask.unsqueeze(0))
-                bbox = ops.masks_to_boxes(large_circle).squeeze()
-                bboxes.append(bbox)
-                masked_raw = each_input_raw[:,int(bbox[1]):int(bbox[3]),int(bbox[0]):int(bbox[2])]
-                tinputs[j] = preprocess(img_size)(masked_raw)
-            else:
-                bboxes.append(0)
+        if crop_into_circle:
+            for j, (each_input,each_input_raw) in enumerate(zip(tinputs,raw_img)):
+                circle_mask = detect_hough_circles(each_input).to(device)
+                if torch.sum(circle_mask) > 3000:
+                    large_circle = transforms.Resize((each_input_raw.squeeze().shape[0],each_input_raw.squeeze().shape[1]), antialias=True)(circle_mask.unsqueeze(0))
+                    bbox = ops.masks_to_boxes(large_circle).squeeze()
+                    bboxes.append(bbox)
+                    masked_raw = each_input_raw[:,int(bbox[1]):int(bbox[3]),int(bbox[0]):int(bbox[2])]
+                    tinputs[j] = preprocess(img_size)(masked_raw)
+                else:
+                    bboxes.append(0)
 
         # normalize the inputs for each other (batches)
         tinputs = norm_0_to_95_torch(tinputs)
