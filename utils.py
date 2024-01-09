@@ -55,7 +55,7 @@ class BCEDiceLoss_blobPunish(nn.Module):
         if blob_number_penalty < 1:
             blob_number_penalty = 1 
         if blob_number_penalty > input.shape[0]:
-            blob_number_penalty = predict.shape[0]
+            blob_number_penalty = input.shape[0]
 
         bce = nn.functional.binary_cross_entropy_with_logits(input, target)
         smooth = 1e-5

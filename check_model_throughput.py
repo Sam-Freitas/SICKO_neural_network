@@ -73,3 +73,15 @@ for batch_size in range(0,256,2):
     torch.cuda.empty_cache()
 
 print('eof')
+
+
+
+
+# # Calculate available GPU memory
+# memory_stats = torch.cuda.memory_stats()
+# total_memory = torch.cuda.get_device_properties(0).total_memory
+# available_memory = total_memory - memory_stats["allocated_bytes.all.current"]
+# available_memory = available_memory / 1024**3
+# print(f"Available GPU memory: {available_memory:.2f} GB")
+# batch_size = rounddown(available_memory/0.125, 64)
+# print(f"Batch size: {batch_size:.2f}")

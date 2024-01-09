@@ -92,14 +92,16 @@ def get_this_model():
     model = CMUNeXt(input_channel=1,num_classes=1,dims=[32, 64, 128, 256, 512], depths=[1, 1, 1, 6, 3], kernels=[3, 3, 7, 7, 7]).to(device) ## large
     return model
 
-def detect_hough_circles(img):
+def detect_hough_circles(input_img):
 
-    img = norm_0_to_95_torch(img)
+    img = input_img>torch.mean(input_img)
     img = np.atleast_3d((img.cpu().squeeze().numpy()*255).astype(np.uint8))
     a_img_c = np.concatenate((img,img,img), axis = -1)
     detected_circles = cv2.HoughCircles(np.squeeze(img),  
-                       cv2.HOUGH_GRADIENT, 1, 20, param1 = 50, 
-                   param2 = 30, minRadius = 20, maxRadius = 50) 
+                       cv2.HOUGH_GRADIENT, 1, 20, 
+                    param1 = 60, # these two parameters param1 > 2*param2 (??)
+                    param2 = 10, # lower is more false readings
+                    minRadius = 20, maxRadius = 75) 
 
     if detected_circles is not None:
         detected_circles = np.squeeze(np.uint16(np.around(detected_circles)))
@@ -127,17 +129,9 @@ img_size = 128
 model = get_this_model()
 crop_into_circle = True
 
+# load previously trained weights for the model and set it as evaluation mode 
 model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_neural_network\trained_weights\model_20231215_161844_training_128_large_L-8417.pt")) #### uncomment this to use a previously trained weights 
 model.eval()
-
-# # Calculate available GPU memory
-# memory_stats = torch.cuda.memory_stats()
-# total_memory = torch.cuda.get_device_properties(0).total_memory
-# available_memory = total_memory - memory_stats["allocated_bytes.all.current"]
-# available_memory = available_memory / 1024**3
-# print(f"Available GPU memory: {available_memory:.2f} GB")
-# batch_size = rounddown(available_memory/0.125, 64)
-# print(f"Batch size: {batch_size:.2f}")
 
 testing_dataset = SegmentationDataset(all_test_imgs, None, device = device, transforms=None, resize=preprocess(img_size),return_intial_img_aswell = True)
 testing_loader = torch.utils.data.DataLoader(testing_dataset, batch_size = batch_size, shuffle = False)
@@ -165,16 +159,16 @@ with torch.no_grad():
             for j, (each_input,each_input_raw) in enumerate(zip(tinputs,raw_img)):
                 circle_mask = detect_hough_circles(each_input).to(device)
                 if torch.sum(circle_mask) > 3000:
-                    large_circle = transforms.Resize((each_input_raw.squeeze().shape[0],each_input_raw.squeeze().shape[1]), antialias=True)(circle_mask.unsqueeze(0))
+                    large_circle = transforms.Resize((each_input_raw.squeeze().shape[0],each_input_raw.squeeze().shape[1]), antialias=True)(circle_mask.unsqueeze(0)) # resize to input shape
                     bbox = ops.masks_to_boxes(large_circle).squeeze()
                     bboxes.append(bbox)
-                    masked_raw = each_input_raw[:,int(bbox[1]):int(bbox[3]),int(bbox[0]):int(bbox[2])]
+                    masked_raw = each_input_raw[:,int(bbox[1]):int(bbox[3]),int(bbox[0]):int(bbox[2])] # use the circle to get a box and then crop said box out of the image
                     tinputs[j] = preprocess(img_size)(masked_raw)
                 else:
                     bboxes.append(0)
 
         # normalize the inputs for each other (batches)
-        tinputs = norm_0_to_95_torch(tinputs)
+        tinputs = norm_torch(tinputs)
         # run the images through the model        
         toutputs = model(tinputs)#['out']
 
