@@ -12,7 +12,7 @@ from natsort import natsorted
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from utils import *
-from network.CMUNeXt import CMUNeXt# cmunext, cmunext_s, cmunext_l
+from network.CMUNeXt import CMUNeXt, CMUNeXt_relu# cmunext, cmunext_s, cmunext_l
 import pathlib
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -89,30 +89,10 @@ def get_this_model():
     # model = Unet(in_channels=1, num_classes=1, backbone='convnext_base', activation=torch.nn.GELU).to(device)
     # model = CMUNeXt(input_channel = 1, num_classes = 1).to(device) # base
     # model = CMUNeXt(input_channel = 1, num_classes = 1,dims=[8, 16, 32, 64, 128], depths=[1, 1, 1, 1, 1], kernels=[3, 3, 7, 7, 9]).to(device) ## small
-    model = CMUNeXt(input_channel=1,num_classes=1,dims=[32, 64, 128, 256, 512], depths=[1, 1, 1, 6, 3], kernels=[3, 3, 7, 7, 7]).to(device) ## large
+    model = CMUNeXt_relu(input_channel=1,num_classes=1,dims=[32, 64, 128, 256, 512], depths=[1, 1, 1, 6, 3], kernels=[3, 3, 7, 7, 7]).to(device) ## large
     return model
 
-def detect_hough_circles(input_img):
 
-    img = input_img>torch.mean(input_img)
-    img = np.atleast_3d((img.cpu().squeeze().numpy()*255).astype(np.uint8))
-    a_img_c = np.concatenate((img,img,img), axis = -1)
-    detected_circles = cv2.HoughCircles(np.squeeze(img),  
-                       cv2.HOUGH_GRADIENT, 1, 20, 
-                    param1 = 60, # these two parameters param1 > 2*param2 (??)
-                    param2 = 10, # lower is more false readings
-                    minRadius = 20, maxRadius = 75) 
-
-    if detected_circles is not None:
-        detected_circles = np.squeeze(np.uint16(np.around(detected_circles)))
-        if detected_circles.shape.__len__() > 1:
-            detected_circles = detected_circles[0,:]
-        a, b, r = detected_circles[0], detected_circles[1], detected_circles[2] 
-        circle_mask = torch.tensor(cv2.circle(np.zeros((img_size,img_size)), (a, b), r, 1, -1)) 
-    else:
-        circle_mask = torch.zeros((img_size,img_size))
-
-    return circle_mask
 
 # get all the images
 # get all the images in a recursive folder
@@ -131,6 +111,7 @@ crop_into_circle = True
 
 # load previously trained weights for the model and set it as evaluation mode 
 model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_neural_network\trained_weights\model_20231215_161844_training_128_large_L-8417.pt")) #### uncomment this to use a previously trained weights 
+model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_neural_network\trained_weights\model_20240109_164231_training_128_large_L-8405_RELU.pt"))
 model.eval()
 
 testing_dataset = SegmentationDataset(all_test_imgs, None, device = device, transforms=None, resize=preprocess(img_size),return_intial_img_aswell = True)
@@ -157,12 +138,13 @@ with torch.no_grad():
         # then uses that mask to create a more "zoomed in" version of the input image, then preprocesses it for the input
         if crop_into_circle:
             for j, (each_input,each_input_raw) in enumerate(zip(tinputs,raw_img)):
-                circle_mask = detect_hough_circles(each_input).to(device)
+                circle_mask = detect_hough_circles(each_input, img_size=img_size).to(device)
                 if torch.sum(circle_mask) > 3000:
                     large_circle = transforms.Resize((each_input_raw.squeeze().shape[0],each_input_raw.squeeze().shape[1]), antialias=True)(circle_mask.unsqueeze(0)) # resize to input shape
+                    masked_raw = each_input_raw*large_circle
                     bbox = ops.masks_to_boxes(large_circle).squeeze()
                     bboxes.append(bbox)
-                    masked_raw = each_input_raw[:,int(bbox[1]):int(bbox[3]),int(bbox[0]):int(bbox[2])] # use the circle to get a box and then crop said box out of the image
+                    masked_raw = masked_raw[:,int(bbox[1]):int(bbox[3]),int(bbox[0]):int(bbox[2])] # use the circle to get a box and then crop said box out of the image
                     tinputs[j] = preprocess(img_size)(masked_raw)
                 else:
                     bboxes.append(0)

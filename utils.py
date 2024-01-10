@@ -1,6 +1,6 @@
 from torchvision.io.image import read_file, read_image, write_jpeg
 from torchvision.models import segmentation 
-from torchvision import transforms
+from torchvision import transforms, ops
 from sklearn.model_selection import train_test_split
 from PIL import Image
 from torch import tensor, uint8, argmin, argmax, device, sum, mul
@@ -296,6 +296,28 @@ def preprocess(img_size=224):
     )
     return preprocess_func
 
+def detect_hough_circles(input_img, img_size = 128):
+
+    img = input_img>torch.mean(input_img)
+    img = np.atleast_3d((img.cpu().squeeze().numpy()*255).astype(np.uint8))
+    a_img_c = np.concatenate((img,img,img), axis = -1)
+    detected_circles = cv2.HoughCircles(np.squeeze(img),  
+                       cv2.HOUGH_GRADIENT, 1, 20, 
+                    param1 = 60, # these two parameters param1 > 2*param2 (??)
+                    param2 = 10, # lower is more false readings
+                    minRadius = 20, maxRadius = 75) 
+
+    if detected_circles is not None:
+        detected_circles = np.squeeze(np.uint16(np.around(detected_circles)))
+        if detected_circles.shape.__len__() > 1:
+            detected_circles = detected_circles[0,:]
+        a, b, r = detected_circles[0], detected_circles[1], detected_circles[2] 
+        circle_mask = torch.tensor(cv2.circle(np.zeros((img_size,img_size)), (a, b), r, 1, -1)) 
+    else:
+        circle_mask = torch.zeros((img_size,img_size))
+
+    return circle_mask
+
 def write_outputs_to_images(inputs, outputs, output_path, i = 0, j = '', binary_threshold = 0.5):
     if 'Dict' in str(type(outputs)):
         outputs = outputs['out']
@@ -428,7 +450,7 @@ def training_loop(model, EPOCHS, loss_fn, optimizer, training_loader, validation
                   weights_outputs_path = os.getcwd(),best_vloss = 1000000, timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S'),
                   epoch_number = 0, testing_binary_threshold = 0.5,
                   save_weights = True, save_weights_suffix = 'training', 
-                  use_early_stopping = False, early_stop_patience = 10):
+                  use_early_stopping = False, early_stop_patience = 10, crop_into_circle = True):
 
     losses = []
 
@@ -476,6 +498,7 @@ def training_loop(model, EPOCHS, loss_fn, optimizer, training_loader, validation
             with torch.no_grad():
                 for i, tdata in enumerate(tqdm.tqdm(testing_loader)):
                     tinputs = tdata
+
                     toutputs = model(tinputs)#['out']
 
                     write_outputs_to_images(tinputs, toutputs, output_path, i = i, binary_threshold = testing_binary_threshold)

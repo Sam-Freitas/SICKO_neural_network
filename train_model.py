@@ -14,7 +14,7 @@ from albumentations.pytorch import ToTensorV2
 from backbones_unet.model.unet import Unet
 from utils import *
 
-from network.CMUNeXt import CMUNeXt# cmunext, cmunext_s, cmunext_l
+from network.CMUNeXt import CMUNeXt, CMUNeXt_relu# cmunext, cmunext_s, cmunext_l
 
 plt.ioff()
 # check cuda or mps
@@ -65,7 +65,7 @@ def add_sythetic_data(X_train, y_train, img_size, number_to_stop_at = 1000000000
     return X_train + additional_data, y_train + additional_masks
 
 def get_this_model():
-    model = CMUNeXt(input_channel=1,num_classes=1,dims=[32, 64, 128, 256, 512], depths=[1, 1, 1, 6, 3], kernels=[3, 3, 7, 7, 7]).to(device) ## large
+    model = CMUNeXt_relu(input_channel=1,num_classes=1,dims=[32, 64, 128, 256, 512], depths=[1, 1, 1, 6, 3], kernels=[3, 3, 7, 7, 7]).to(device) ## large
     return model
 
 weights_outputs_path = './trained_weights/'
@@ -86,13 +86,11 @@ os.makedirs(output_path,exist_ok=True)
 
 img_size = 128
 
-pretrain = False
 load_weights = False #False
 batch_size = 64 #124
-pretrain_epochs = 100
 early_stop_patience = 25
-training_epochs = 10000
-use_h5 = False
+training_epochs = 256
+use_h5 = True
 
 imgs_path = r'C:\Users\LabPC2\Desktop\_SICKO_NN\training_unmodified\images_unmodified'
 masks_path = r'C:\Users\LabPC2\Desktop\_SICKO_NN\training_unmodified\masks_unmodified'
@@ -102,8 +100,8 @@ model = get_this_model()
 loss_fn = BCEDiceLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-if not pretrain:
-    pretrain_epochs = 0
+if load_weights:
+    model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_neural_network\trained_weights\model_20231215_161844_training_128_large_L-8417.pt")) #### uncomment this to use a previously trained weights 
 
 # optimizer = torch.optim.SGD(model.parameters(), lr=0.5, momentum=0.9)
 
@@ -114,7 +112,7 @@ if not use_h5:
 
     X_train, X_val, y_train, y_val = train_test_split(all_imgs, all_masks, test_size=0.33, random_state=42)
     X_train, y_train = add_sythetic_data(X_train, y_train, img_size,
-                        sytheticly_added_worms = True, blank_wells = True, isolated_worms = True)
+                        sytheticly_added_worms = True, blank_wells = True, isolated_worms = False)
 
     torch.save(X_train,os.path.join(r"C:\Users\LabPC2\Desktop\_SICKO_NN\h5","X_train.h5"))
     torch.save(X_val,os.path.join(r"C:\Users\LabPC2\Desktop\_SICKO_NN\h5","X_val.h5"))
@@ -136,11 +134,9 @@ training_loader = torch.utils.data.DataLoader(training_dataset, batch_size = bat
 validation_loader = torch.utils.data.DataLoader(validation_dataset, batch_size = batch_size, shuffle = True)
 testing_loader = torch.utils.data.DataLoader(testing_dataset, batch_size = 1, shuffle = False)
 
-model_path, losses = training_loop(model, EPOCHS = pretrain_epochs+training_epochs, loss_fn = loss_fn, optimizer = optimizer, 
+model_path, losses = training_loop(model, EPOCHS = training_epochs, loss_fn = loss_fn, optimizer = optimizer, 
                 training_loader = training_loader, validation_loader = validation_loader, testing_loader = testing_loader, 
                 output_path = output_path, weights_outputs_path = weights_outputs_path, best_vloss = 10000000, 
                 timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S'),
-                save_weights = 'last', save_weights_suffix = 'training',
-                epoch_number=pretrain_epochs)#'last')
-
+                save_weights = 'last', save_weights_suffix = 'training')
 
