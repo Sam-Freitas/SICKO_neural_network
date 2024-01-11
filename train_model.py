@@ -40,24 +40,24 @@ def add_sythetic_data(X_train, y_train, img_size, number_to_stop_at = 1000000000
     if sytheticly_added_worms:
         imgs_path_synthetic = r"C:\Users\LabPC2\Desktop\_SICKO_NN\training_unmodified\images_synthetic"
         masks_path_synthetic = r"C:\Users\LabPC2\Desktop\_SICKO_NN\training_unmodified\masks_synthetic"
-        all_imgs = read_all_images(natsorted(glob.glob(os.path.join(imgs_path,'*.png'))), transforms = preprocess(img_size), number_to_stop_at = int(number_to_stop_at))
-        all_masks= read_all_images(natsorted(glob.glob(os.path.join(masks_path,'*.png'))), transforms = preprocess(img_size), number_to_stop_at = int(number_to_stop_at))
+        all_imgs = read_all_images(natsorted(glob.glob(os.path.join(imgs_path_synthetic,'*.png'))), transforms = preprocess(img_size), number_to_stop_at = int(number_to_stop_at))
+        all_masks= read_all_images(natsorted(glob.glob(os.path.join(masks_path_synthetic,'*.png'))), transforms = preprocess(img_size), number_to_stop_at = int(number_to_stop_at))
         additional_data = additional_data + all_imgs
         additional_masks = additional_masks + all_masks
 
     if blank_wells:
         imgs_path_blank_wells = r"C:\Users\LabPC2\Desktop\_SICKO_NN\training_unmodified\images_synthetic_blank"
         masks_path_blank_wells = r"C:\Users\LabPC2\Desktop\_SICKO_NN\training_unmodified\masks_synthetic_blank"
-        all_imgs = read_all_images(natsorted(glob.glob(os.path.join(imgs_path,'*.png'))), transforms = preprocess(img_size), number_to_stop_at = int(number_to_stop_at))
-        all_masks= read_all_images(natsorted(glob.glob(os.path.join(masks_path,'*.png'))), transforms = preprocess(img_size), number_to_stop_at = int(number_to_stop_at))
+        all_imgs = read_all_images(natsorted(glob.glob(os.path.join(imgs_path_blank_wells,'*.png'))), transforms = preprocess(img_size), number_to_stop_at = int(number_to_stop_at))
+        all_masks= read_all_images(natsorted(glob.glob(os.path.join(masks_path_blank_wells,'*.png'))), transforms = preprocess(img_size), number_to_stop_at = int(number_to_stop_at))
         additional_data = additional_data + all_imgs
         additional_masks = additional_masks + all_masks
 
     if isolated_worms:
         imgs_path_isolated_worms = r"C:\Users\LabPC2\Desktop\_SICKO_NN\training_unmodified\isolated_worms"
         masks_path_isolated_worms = r"C:\Users\LabPC2\Desktop\_SICKO_NN\training_unmodified\masks_unmodified"
-        all_imgs = read_all_images(natsorted(glob.glob(os.path.join(imgs_path,'*.png'))), transforms = preprocess(img_size), number_to_stop_at = int(number_to_stop_at))
-        all_masks= read_all_images(natsorted(glob.glob(os.path.join(masks_path,'*.png'))), transforms = preprocess(img_size), number_to_stop_at = int(number_to_stop_at))
+        all_imgs = read_all_images(natsorted(glob.glob(os.path.join(imgs_path_isolated_worms,'*.png'))), transforms = preprocess(img_size), number_to_stop_at = int(number_to_stop_at))
+        all_masks= read_all_images(natsorted(glob.glob(os.path.join(masks_path_isolated_worms,'*.png'))), transforms = preprocess(img_size), number_to_stop_at = int(number_to_stop_at))
         additional_data = additional_data + all_imgs
         additional_masks = additional_masks + all_masks
 
@@ -89,7 +89,7 @@ img_size = 128
 load_weights = False #False
 batch_size = 64 #124
 early_stop_patience = 25
-training_epochs = 256
+training_epochs = 1000
 use_h5 = True
 
 imgs_path = r'C:\Users\LabPC2\Desktop\_SICKO_NN\training_unmodified\images_unmodified'
@@ -98,7 +98,7 @@ testing_path = r'C:\Users\LabPC2\Desktop\_SICKO_NN\testing_WPdata2'
 
 model = get_this_model()
 loss_fn = BCEDiceLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
 if load_weights:
     model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_neural_network\trained_weights\model_20231215_161844_training_128_large_L-8417.pt")) #### uncomment this to use a previously trained weights 
