@@ -82,37 +82,37 @@ all_imgs = natsorted(glob.glob(os.path.join(r'C:\Users\LabPC2\Desktop',r'_SICKO_
 all_masks= natsorted(glob.glob(os.path.join(r'C:\Users\LabPC2\Desktop',r'_SICKO_NN\training_unmodified\masks_unmodified','*.png')))#[:100]
 # all_test_imgs = read_all_images(natsorted(glob.glob(os.path.join(r'C:\Users\LabPC2\Desktop',r'_SICKO_NN\testing','*.png'))), transforms = preprocess)
 
-N_synthetic_images = len(all_imgs)*10
+N_synthetic_images = len(all_imgs)*2
 
-########### this loop creates the isolated worm and the blank mask/associated image
-for i,(this_img_path,this_mask_path) in enumerate(tqdm.tqdm(zip(all_imgs,all_masks), total=len(all_imgs))):
+# ########### this loop creates the isolated worm and the blank mask/associated image
+# for i,(this_img_path,this_mask_path) in enumerate(tqdm.tqdm(zip(all_imgs,all_masks), total=len(all_imgs))):
 
-    img_name = os.path.split(this_img_path)[-1]
+#     img_name = os.path.split(this_img_path)[-1]
 
-    if '_' not in img_name:
+#     if '_' not in img_name:
 
-        this_img = grayscale_func(read_img_custom(this_img_path))
-        this_mask = grayscale_func(read_img_custom(this_mask_path))
+#         this_img = grayscale_func(read_img_custom(this_img_path))
+#         this_mask = grayscale_func(read_img_custom(this_mask_path))
 
-        isolated_worm = ((this_img*(1*(this_mask>0))).numpy().squeeze()*255).astype(np.uint8)
-        cv2.imwrite(os.path.join(output_worms, '_' + img_name), isolated_worm)
+#         isolated_worm = ((this_img*(1*(this_mask>0))).numpy().squeeze()*255).astype(np.uint8)
+#         cv2.imwrite(os.path.join(output_worms, '_' + img_name), isolated_worm)
 
-        mask = this_mask.numpy().squeeze()
-        img = this_img.numpy().squeeze()
-        img = (img*255).astype(np.uint8)
+#         mask = this_mask.numpy().squeeze()
+#         img = this_img.numpy().squeeze()
+#         img = (img*255).astype(np.uint8)
 
-        large_mask = (255*(cv2.blur(mask,(100,100))>0)).astype(np.uint8) # for inpaint around the mask
-        blank_mask = np.zeros_like(large_mask) # for export 
+#         large_mask = (255*(cv2.blur(mask,(100,100))>0)).astype(np.uint8) # for inpaint around the mask
+#         blank_mask = np.zeros_like(large_mask) # for export 
 
-        estimated_sigma = estimate_sigma(img)
-        noise_whole = random_noise(img, mode = 'gaussian', var = estimated_sigma*8, clip = False, mean = np.mean(img))
-        noise_mask = noise_whole*large_mask
+#         estimated_sigma = estimate_sigma(img)
+#         noise_whole = random_noise(img, mode = 'gaussian', var = estimated_sigma*8, clip = False, mean = np.mean(img))
+#         noise_mask = noise_whole*large_mask
 
-        dst = cv2.inpaint(img,large_mask,9,cv2.INPAINT_TELEA).astype(np.float64) # cv2.INPAINT_NS #
-        dst[large_mask>0] = ((noise_whole[large_mask>0]) + dst[large_mask>0])/2
+#         dst = cv2.inpaint(img,large_mask,9,cv2.INPAINT_TELEA).astype(np.float64) # cv2.INPAINT_NS #
+#         dst[large_mask>0] = ((noise_whole[large_mask>0]) + dst[large_mask>0])/2
 
-        cv2.imwrite(os.path.join(output_img_blank, '_blank_' + img_name), dst)
-        cv2.imwrite(os.path.join(output_mask_blank, '_blank_' + img_name), blank_mask)
+#         cv2.imwrite(os.path.join(output_img_blank, '_blank_' + img_name), dst)
+#         cv2.imwrite(os.path.join(output_mask_blank, '_blank_' + img_name), blank_mask)
 
 ######### the goal is to create N random images 
 ######### grab random blank image 

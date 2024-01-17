@@ -110,8 +110,9 @@ model = get_this_model()
 crop_into_circle = True
 
 # load previously trained weights for the model and set it as evaluation mode 
-model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_neural_network\trained_weights\model_20231215_161844_training_128_large_L-8417.pt")) #### uncomment this to use a previously trained weights 
-model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_neural_network\trained_weights\model_20240109_164231_training_128_large_L-8405_RELU.pt"))
+# model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_neural_network\trained_weights\model_20231215_161844_training_128_large_L-8417.pt")) #### uncomment this to use a previously trained weights 
+# model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_neural_network\trained_weights\model_20240109_164231_training_128_large_L-8405_RELU.pt"))
+model.load_state_dict(torch.load('trained_weights\model_20240112_152037_training_128_large_L-8417.pt.pt'))
 model.eval()
 
 testing_dataset = SegmentationDataset(all_test_imgs, None, device = device, transforms=None, resize=preprocess(img_size),return_intial_img_aswell = True)

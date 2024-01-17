@@ -65,15 +65,15 @@ def add_sythetic_data(X_train, y_train, img_size, number_to_stop_at = 1000000000
     return X_train + additional_data, y_train + additional_masks
 
 def get_this_model():
-    model = CMUNeXt_relu(input_channel=1,num_classes=1,dims=[32, 64, 128, 256, 512], depths=[1, 1, 1, 6, 3], kernels=[3, 3, 7, 7, 7]).to(device) ## large
+    model = CMUNeXt(input_channel=1,num_classes=1,dims=[32, 64, 128, 256, 512], depths=[1, 1, 1, 6, 3], kernels=[3, 3, 7, 7, 7]).to(device) ## large
     return model
 
 weights_outputs_path = './trained_weights/'
 os.makedirs(weights_outputs_path,exist_ok=True)
 
 training_transforms = A.Compose([
-    A.augmentations.crops.transforms.CropAndPad(pad_cval=0,pad_cval_mask=0,keep_size=True,percent=[-0.25, 0.25],p = 0.5), # pad with zeros
-    A.augmentations.crops.transforms.CropAndPad(pad_mode=2,keep_size=True,percent=[-0.25, 0.25], p = 0.5), # pad with reflect 
+    # A.augmentations.crops.transforms.CropAndPad(pad_cval=0,pad_cval_mask=0,keep_size=True,percent=[-0.25, 0.25],p = 0.5), # pad with zeros
+    # A.augmentations.crops.transforms.CropAndPad(pad_mode=2,keep_size=True,percent=[-0.25, 0.25], p = 0.5), # pad with reflect 
     A.Flip(p=0.5),
     A.RandomBrightnessContrast(p=0.5),
     ToTensorV2()
@@ -98,10 +98,10 @@ testing_path = r'C:\Users\LabPC2\Desktop\_SICKO_NN\testing_WPdata2'
 
 model = get_this_model()
 loss_fn = BCEDiceLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 if load_weights:
-    model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_neural_network\trained_weights\model_20231215_161844_training_128_large_L-8417.pt")) #### uncomment this to use a previously trained weights 
+    model.load_state_dict(torch.load(r"Y:\Users\Sam Freitas\SICKO_neural_network\trained_weights\model_20240109_164231_training_128_large_L-8405_RELU.pt")) #### uncomment this to use a previously trained weights 
 
 # optimizer = torch.optim.SGD(model.parameters(), lr=0.5, momentum=0.9)
 
