@@ -226,10 +226,18 @@ def s(img, title = None):
     plt.imshow(img)
     plt.title(title)
 
+def mask_blur_function(mask):
+
+    temp_mask = transforms.GaussianBlur(kernel_size = (35,35), sigma = (9))(mask)
+    out = torch.clip(temp_mask+mask, min = 0, max = mask.max())
+
+    return out
+
 class SegmentationDataset(Dataset):
-    def __init__(self, imagePaths, maskPaths = None, transforms = None, resize = None, device = device('cpu'), return_intial_img_aswell = False):
+    def __init__(self, imagePaths, maskPaths = None, transforms = None, resize = None, device = device('cpu'), return_intial_img_aswell = False, blur_masks = False):
         # store the image and mask filepaths, and augmentation
         # transforms
+        self.blur_masks = blur_masks
         self.imagePaths = imagePaths
         self.maskPaths = maskPaths
         self.transforms = transforms
@@ -278,7 +286,10 @@ class SegmentationDataset(Dataset):
         # return a tuple of the image and its mask
         if self.maskPaths is not None:
             image, mask = image.to(self.device), mask.to(self.device)
-            return (image, mask)
+            if self.blur_masks:
+                return (image, mask_blur_function(mask))
+            else:
+                return (image, mask)
         else:
             image = image.to(self.device)
             if self.return_intial_img_aswell:

@@ -72,8 +72,8 @@ weights_outputs_path = './trained_weights/'
 os.makedirs(weights_outputs_path,exist_ok=True)
 
 training_transforms = A.Compose([
-    # A.augmentations.crops.transforms.CropAndPad(pad_cval=0,pad_cval_mask=0,keep_size=True,percent=[-0.25, 0.25],p = 0.5), # pad with zeros
-    # A.augmentations.crops.transforms.CropAndPad(pad_mode=2,keep_size=True,percent=[-0.25, 0.25], p = 0.5), # pad with reflect 
+    A.augmentations.crops.transforms.CropAndPad(pad_cval=0,pad_cval_mask=0,keep_size=True,percent=[-0.15, 0.15],p = 0.5), # pad with zeros
+    A.augmentations.crops.transforms.CropAndPad(pad_mode=2,keep_size=True,percent=[-0.15, 0.15], p = 0.5), # pad with reflect 
     A.Flip(p=0.5),
     A.RandomBrightnessContrast(p=0.5),
     ToTensorV2()
@@ -87,7 +87,7 @@ os.makedirs(output_path,exist_ok=True)
 img_size = 128
 
 load_weights = False #False
-batch_size = 64 #124
+batch_size = 86 #124
 early_stop_patience = 25
 training_epochs = 1000
 use_h5 = True
@@ -126,8 +126,8 @@ else:
     y_val = torch.load(os.path.join(r"C:\Users\LabPC2\Desktop\_SICKO_NN\h5","y_val.h5"))
     all_test_imgs = torch.load(os.path.join(r"C:\Users\LabPC2\Desktop\_SICKO_NN\h5","all_test_imgs.h5"))
 
-training_dataset = SegmentationDataset(X_train,y_train, device = device, transforms=training_transforms)
-validation_dataset = SegmentationDataset(X_val,y_val, device = device, transforms=None) ##################whyyyyyyyyyyyyyyyy
+training_dataset = SegmentationDataset(X_train,y_train, device = device, transforms=training_transforms, blur_masks=False)
+validation_dataset = SegmentationDataset(X_val,y_val, device = device, transforms=None, blur_masks=False) ##################whyyyyyyyyyyyyyyyy
 testing_dataset = SegmentationDataset(all_test_imgs, None, device = device, transforms=None)
 
 training_loader = torch.utils.data.DataLoader(training_dataset, batch_size = batch_size, shuffle = True)
